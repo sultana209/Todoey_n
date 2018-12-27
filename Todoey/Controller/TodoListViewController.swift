@@ -14,6 +14,7 @@ class TodoListViewController: UIViewController {
     
     var lastSelection: IndexPath!
     var itemArray = TodoItem.getData()
+    var defaults = UserDefaults.standard
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -21,6 +22,12 @@ class TodoListViewController: UIViewController {
         self.title = "ToDoey"
         let addBarBtn = UIBarButtonItem(image: UIImage(named: "add"), style: .done, target: self, action: #selector(addItemTapped))
         self.navigationItem.rightBarButtonItem = addBarBtn
+     
+        let itemData = defaults.data(forKey: Contacts.TodoList.todoItem)
+       itemArray = try! JSONDecoder().decode([TodoItem].self, from: (itemData ?? nil)!)
+        print(itemArray)
+        
+     
     }
     
     @objc func addItemTapped(_sender: UIBarButtonItem) {
@@ -44,6 +51,11 @@ class TodoListViewController: UIViewController {
     
     func saveItem(itemName: String) {
         self.itemArray.insert(TodoItem(name: itemName), at: 0)
+        
+        let itemData = try! JSONEncoder().encode(itemArray)
+        defaults.set(itemData, forKey: Contacts.TodoList.todoItem)
+    
+      
        // self.itemArray.append(TodoItem(name: itemName))
         
         self.ToDOtableView.beginUpdates()
@@ -63,7 +75,7 @@ extension TodoListViewController: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         
         let cell = tableView.dequeueReusableCell(withIdentifier: "listCell", for: indexPath)
-        cell.textLabel?.text = itemArray[indexPath.row].itemName
+        cell.textLabel?.text = itemArray[indexPath.row].name
         return cell
     }
     
