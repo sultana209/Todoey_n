@@ -21,9 +21,15 @@ class TodoItem: NSObject, Codable {
 //
  
     var name: String = ""
+    var chacked: Bool = false
     
     init(name: String) {
         self.name =  name
+       // self.chacked = false
+    }
+    init(name: String, done: Bool){
+        self.name = name
+        self.chacked = done
     }
     
     init(json: [String: String]){
