@@ -22,7 +22,13 @@ class TodoItem: NSObject, Codable {
  
     var name: String = ""
     var chacked: Bool = false
+    override init() {
+        
+    }
     
+    init(item_Data: NSSet) {
+       // self.name = item_Data.
+    }
     init(name: String) {
         self.name =  name
        // self.chacked = false
@@ -30,6 +36,11 @@ class TodoItem: NSObject, Codable {
     init(name: String, done: Bool){
         self.name = name
         self.chacked = done
+    }
+    
+    init(itemData: Item){
+        self.name = itemData.title!
+        self.chacked = itemData.done
     }
     
     init(json: [String: String]){

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="14460.32" systemVersion="18A391" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
+    <entity name="CetagoryName" representedClassName="CetagoryName" syncable="YES">
+        <attribute name="cetName" attributeType="String" syncable="YES"/>
+        <relationship name="toItems" toMany="YES" deletionRule="Nullify" destinationEntity="Item" inverseName="toCetagory" inverseEntity="Item" syncable="YES"/>
+    </entity>
+    <entity name="Item" representedClassName="Item" syncable="YES">
+        <attribute name="done" attributeType="Boolean" usesScalarValueType="YES" syncable="YES"/>
+        <attribute name="title" attributeType="String" syncable="YES"/>
+        <relationship name="toCetagory" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="CetagoryName" inverseName="toItems" inverseEntity="CetagoryName" syncable="YES"/>
+    </entity>
+    <elements>
+        <element name="CetagoryName" positionX="276.046875" positionY="-31.1484375" width="128" height="75"/>
+        <element name="Item" positionX="608.16015625" positionY="-44.59765625" width="128" height="90"/>
+    </elements>
+</model>
