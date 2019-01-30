@@ -7,7 +7,7 @@
 //
 
 import UIKit
-import CoreData
+import RealmSwift
 
 class TodoListViewController: UIViewController {
     
@@ -15,7 +15,9 @@ class TodoListViewController: UIViewController {
     @IBOutlet weak var searchBar: UISearchBar!
     
     var lastSelection: IndexPath!
-    var itemArray = TodoItem.getData()
+    //var itemArray = TodoItem.getData()
+      
+      var itemArray: Results<Item>?
     var defaults = UserDefaults.standard
       var todo_title: String = ""
       var selectedcetagory : Cetagory?{
@@ -24,11 +26,9 @@ class TodoListViewController: UIViewController {
             }
       }
       
-      var filteritemArray = [TodoItem]()
+      var filteritemArray: Results<Item>?
       var inSarcheMood: Bool = false
    // var tappedItem: Bool?
-
-   // let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendPathComponent("Item.plist")
     
     let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Item.plist")
     
@@ -40,14 +40,14 @@ class TodoListViewController: UIViewController {
         self.navigationItem.rightBarButtonItem = addBarBtn
         
 
-        // loadData()
+         loadData()
 //        let mydata = defaults.dictionary(forKey: Contacts.TodoList.todoItem)
 //        print(mydata)
 //         let data = mydata?["Contacts.TodoList.todoItem"] as! String
 //        print(data)
 //        itemArray.append(TodoItem(name: data))
         
-        print(itemArray)
+      //  print(itemArray)
       
       // applying search Controller
       searchBar.returnKeyType = .done
@@ -83,19 +83,20 @@ class TodoListViewController: UIViewController {
     }
     
     func saveItem(itemName: String) {
-       // self.itemArray.insert(TodoItem(name: itemName), at: 0)
-        self.itemArray.insert(TodoItem(name: itemName, done: false), at: 0)
+      //  self.itemArray.insert(TodoItem(name: itemName), at: 0)
+       // self.itemArray.insert(Item(name: itemName, done: false), at: 0)
       
-      let item = TodoItem()
-        item.name = itemName
-        item.chacked = false
+      let item = Item()
+    
+        item.title = itemName
+        //item.done = false
      
         saveInfo(itemInfo: item)
 
-        
+      itemArray = realm.objects(Item.self).filter("ANY parentCategory.cetaroryName == %@", selectedcetagory?.cetaroryName)
       
-       // self.itemArray.append(TodoItem(name: itemName))
-        
+      //  self.itemArray.append(TodoItem(name: itemName))
+      
         self.ToDOtableView.beginUpdates()
         self.ToDOtableView.insertRows(at: [IndexPath.init(row: 0, section: 0)], with: .top)
         self.ToDOtableView.endUpdates()
@@ -107,7 +108,8 @@ class TodoListViewController: UIViewController {
       // using coreData
       
      // itemArray = SaveServices.sharedInstance.fetchAll(cetName: todo_title)
-      itemArray = SaveServices.sharedInstance.fetchAll(cetName: (selectedcetagory?.cetaroryName)!)
+       itemArray = SaveServices.sharedInstance.fetchAll(cetName: (selectedcetagory)!)
+      
       /* // using  Codeable and plist
         // using PropertyListDecoder()
         let decoder = PropertyListDecoder()
@@ -126,32 +128,32 @@ class TodoListViewController: UIViewController {
  */
     }
     
-    func saveInfo(itemInfo: TodoItem) {
-        
-    
-        
+    func saveInfo(itemInfo: Item) {
+
+
+
        // SaveServices.sharedInstance.save(itemData: itemInfo)
-      SaveServices.sharedInstance.save(itemData: itemInfo, cetName: todo_title)
-        
+      SaveServices.sharedInstance.save(itemData: itemInfo, cetName: (selectedcetagory)!)
+
         /*  // save data using Codable and plist
      /*
         // using JSONEncoder()
         let itemData = try! JSONEncoder().encode(itemArray)
         defaults.set(itemData, forKey: Contacts.TodoList.todoItem)
         */
-        
+
         // using PropertyListEncoder()
-        
+
         let encoder = PropertyListEncoder()
-        
+
         do {
             let data = try encoder.encode(itemArray)
             try data.write(to: dataFilePath!)
         } catch {
             print("error was occured..")
         }
-        
-        
+
+
         //        var settings =  [String: String]()
         //        settings[Contacts.TodoList.todoItem] = itemName
         //        defaults.dictionary(forKey: Contacts.TodoList.todoItem)
@@ -163,40 +165,46 @@ class TodoListViewController: UIViewController {
 
 extension TodoListViewController: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-       // return itemArray.count
+     // return itemArray?.count ?? 1
       if inSarcheMood {
-            return filteritemArray.count
+            return filteritemArray?.count ?? 1
       }
-      return itemArray.count
+      return itemArray?.count ?? 1
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         
         let cell = tableView.dequeueReusableCell(withIdentifier: "listCell", for: indexPath)
-      let itemindividual : TodoItem!
+     
+      let item : Item?
       if  inSarcheMood {
-            itemindividual = filteritemArray[indexPath.row]
+            item = filteritemArray?[indexPath.row]
       } else {
-            itemindividual = itemArray[indexPath.row]
+            item = itemArray?[indexPath.row]
       }
+
       
-        cell.textLabel?.text = itemindividual.name
+     
+      if let itemindividual = item{
+      cell.textLabel?.text = itemindividual.title
         
         let  tappedItem = itemindividual
         
-      cell.accessoryType = tappedItem?.chacked == true ? .checkmark : .none
+      cell.accessoryType = tappedItem.done == true ? .checkmark : .none
         
 //        if tappedItem.chacked {
 //            cell.accessoryType = .checkmark
 //        } else {
 //            cell.accessoryType = .none
 //        }
-      
+      } else  {
+            cell.textLabel?.text = "No item added..."
+      }
         return cell
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-      var item: TodoItem!
+     // var item: Item!
         ToDOtableView.deselectRow(at: indexPath, animated: true)
        /*
         if let cell = self.ToDOtableView.cellForRow(at: indexPath){
@@ -207,17 +215,19 @@ extension TodoListViewController: UITableViewDataSource, UITableViewDelegate {
           }
         }
  */
-      if inSarcheMood {
-            item = filteritemArray[indexPath.row]
-      } else {
-            item = itemArray[indexPath.row]
-      }
+//      if inSarcheMood {
+//          //  item = filteritemArray[indexPath.row]
+//      } else {
+//            item = itemArray?[indexPath.row]
+//      }
+      if let item = itemArray?[indexPath.row]{
         let  tappedItem = item
-      tappedItem!.chacked = !tappedItem!.chacked
+            SaveServices.sharedInstance.UpdateitemInfo(itemInfo: tappedItem)
+     // tappedItem!.done = !tappedItem!.done
         
      // saveInfo(itemInfo: tappedItem)
-      SaveServices.sharedInstance.UpdateitemInfo(itemInfo: tappedItem!)
       
+      }
         ToDOtableView.reloadData()
         
     }
@@ -227,9 +237,9 @@ extension TodoListViewController: UITableViewDataSource, UITableViewDelegate {
     }
     
     func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
-        if indexPath.row < itemArray.count {
-            SaveServices.sharedInstance.deleteItemData(itemInfo: itemArray[indexPath.row])
-            itemArray.remove(at: indexPath.row)
+      if indexPath.row < itemArray?.count ?? 1 {
+            SaveServices.sharedInstance.deleteItemData(itemInfo: (itemArray?[indexPath.row])!)
+           // itemArray.remove(at: indexPath.row)
             ToDOtableView.deleteRows(at: [indexPath], with: .automatic)
         }
     }
@@ -238,6 +248,7 @@ extension TodoListViewController: UITableViewDataSource, UITableViewDelegate {
 }
 
 extension TodoListViewController : UISearchBarDelegate {
+      
 //      func updateSearchResults(for searchController: UISearchController) {
 //
 //      }
@@ -255,19 +266,24 @@ extension TodoListViewController : UISearchBarDelegate {
                 //  self.backupContacts.filter({$0.givenName.lowercased().contains(searchText.lowercased()) || $0.familyName.lowercased().contains(searchText.lowercased())})
                  // let leower = searchBar.text!.lowercased()
                 //filteritemArray = itemArray.filter({$0.name.range(of: leower) != nil})
-                  filteritemArray = itemArray.filter({$0.name.lowercased().contains(searchtext.lowercased())})
+                  filteritemArray = realm.objects(Item.self).filter(NSPredicate(format: "%K CONTAINS[c] %@", "title" ,searchtext.lowercased() )).sorted(byKeyPath: "dateCreated", ascending: true)
+                  print(filteritemArray?.count)
+                 // filteritemArray = itemArray?.filter({$0.name.lowercased().contains(searchtext.lowercased())})
                   ToDOtableView.reloadData()
             }
       }
       
-      /* // another way to fetch the filtered array from core data
+      
+      /*
+      // another way to fetch the filtered array from core data
  
  
       
       func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
 
             inSarcheMood = true
-            let request = NSFetchRequest<NSFetchRequestResult>(entityName: "Item")
+       /* //using core data
+             let request = NSFetchRequest<NSFetchRequestResult>(entityName: "Item")
             let predicate = NSPredicate(format: "title CONTAINS[cd]  %@" , searchBar.text!)
 
             request.predicate = predicate
@@ -277,8 +293,22 @@ extension TodoListViewController : UISearchBarDelegate {
             request.sortDescriptors = [sortDescriptor]
 
            loadafterSearching(with: request)
-
-            }
+*/
+            // using realm
+            
+            // filter the filtered array object
+            filteritemArray = itemArray?.filter("title CONTAINS [cd] %@", searchBar.text!).sorted(byKeyPath: "title", ascending: true)
+           
+            /*
+            // filter the Main Item array
+          let predicate = NSPredicate(format: "%K CONTAINS[c] %@", "title" ,searchBar.text?.lowercased() ?? "no data matched" )
+            filteritemArray = realm.objects(Item.self).filter(predicate).sorted(byKeyPath: "title", ascending: true)
+*/
+            
+            print(inSarcheMood)
+            print(filteritemArray?.count)
+            ToDOtableView.reloadData()
+      }
 
  
  
@@ -294,20 +324,22 @@ extension TodoListViewController : UISearchBarDelegate {
            
        }
  
-      func loadafterSearching(with request: NSFetchRequest<NSFetchRequestResult>){
-            do {
-                  let items = try BusinessClass.getContext().fetch(request) as! [Item]
-                  
-                  for info in items {
-                        filteritemArray.append(TodoItem(itemData: info))
-                  }
-            }catch{
-                  print("error doing fetch....")
-            }
-            print(inSarcheMood)
-            print(filteritemArray.count)
-            ToDOtableView.reloadData()
-      }
-      */
+//      func loadafterSearching(with request: Results<Item>){
+//          //  do {
+//              //    let items = try BusinessClass.getContext().fetch(request) as! [Item]
+//
+////                  for info in items {
+////                        filteritemArray.append(TodoItem(itemData: info))
+////                  }
+////            }catch{
+////                  print("error doing fetch....")
+////            }
+//            print(inSarcheMood)
+//          //  print(filteritemArray.count)
+//            ToDOtableView.reloadData()
+//      }
+    */
       
 }
+
+

@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import RealmSwift
 
 class CetagoryViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
     
@@ -15,7 +16,12 @@ class CetagoryViewController: UIViewController, UITableViewDelegate, UITableView
       
       var cetName: String = ""
       
-      var cetagoryList = Cetagory.getData()
+     // var cetagoryList = [Cetagory]()
+    var cetagoryList: Results<Cetagory>?
+   
+//    let realm = try! Realm()
+//    lazy var cetagoryList: Results<Cetagory> = { self.realm.objects(Cetagory.self)}()
+    
     var  i_indexPath: IndexPath? = nil
       override func viewDidLoad() {
         super.viewDidLoad()
@@ -25,6 +31,7 @@ class CetagoryViewController: UIViewController, UITableViewDelegate, UITableView
             let addBarBtn = UIBarButtonItem(title: "add cetagory", style: .done, target: self, action: #selector(addCetagory))
             self.navigationItem.rightBarButtonItem = addBarBtn
 
+       // print(cetagoryList.count)
           loadCetData()
        
     }
@@ -52,20 +59,26 @@ class CetagoryViewController: UIViewController, UITableViewDelegate, UITableView
      func loadCetData() {
           
           
-          cetagoryList = SaveServices.sharedInstance.fetchAllCet()
-         
+//        let  cetList =  SaveServices.sharedInstance.fetchAllCet()
+//        cetagoryList = Array(cetList)
+        
+         cetagoryList =  SaveServices.sharedInstance.fetchAllCet()
+       
      }
       func saveCetagory(ceagoryName: String) {
            
-            self.cetagoryList.insert(Cetagory(cName: ceagoryName), at: 0)
+           // self.cetagoryList.insert(Cetagory(cName: ceagoryName), at: 0)
            // self.itemArray.insert(TodoItem(name: itemName, done: false), at: 0)
-            
+        
             let cet = Cetagory()
             cet.cetaroryName = ceagoryName
 
+        // self.cetagoryList.append(cet)
+       // cetagoryList = Array(realm.objects(Cetagory.self))
+        
             saveCetData(cetInfo: cet)
           
-          
+          cetagoryList = realm.objects(Cetagory.self)
           
             // self.cetagoryList.append(Cetagory(cName: ceagoryName))
           
@@ -83,21 +96,21 @@ class CetagoryViewController: UIViewController, UITableViewDelegate, UITableView
           return 1
      }
       func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-            return cetagoryList.count
+            return cetagoryList?.count ?? 1
       }
       
       func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
             
             let cell = tableView.dequeueReusableCell(withIdentifier: "cetCell", for: indexPath)
             
-            cell.textLabel?.text = cetagoryList[indexPath.row].cetaroryName
+        cell.textLabel?.text = cetagoryList?[indexPath.row].cetaroryName ?? "NO Cetagories added"
             
             return cell
       }
       
       func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
             
-            cetName = cetagoryList[indexPath.row].cetaroryName
+        cetName = cetagoryList?[indexPath.row].cetaroryName ?? "no cet selected"
         i_indexPath = tableView.indexPathForSelectedRow
             
             performSegue(withIdentifier: "gotoIItemTodoVC", sender: self)
@@ -105,9 +118,11 @@ class CetagoryViewController: UIViewController, UITableViewDelegate, UITableView
      
      
      func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
-          if indexPath.row < cetagoryList.count {
-               SaveServices.sharedInstance.deleteCetagoryData(cetInfo: cetagoryList[indexPath.row])
-               cetagoryList.remove(at: indexPath.row)
+        if indexPath.row < cetagoryList?.count ?? 1 {
+            SaveServices.sharedInstance.deleteCetagoryData(cetInfo: (cetagoryList?[indexPath.row])!)
+              // cetagoryList.remove(at: indexPath.row)
+           
+            
                cetagoryTB.deleteRows(at: [indexPath], with: .automatic)
                cetagoryTB.reloadData()
           }
@@ -117,7 +132,7 @@ class CetagoryViewController: UIViewController, UITableViewDelegate, UITableView
             let destination = segue.destination as! TodoListViewController
             destination.todo_title = cetName
         
-        destination.selectedcetagory = cetagoryList[(i_indexPath?.row)!]
+        destination.selectedcetagory = cetagoryList?[(i_indexPath?.row)!]
             
       }
       

@@ -7,241 +7,166 @@
 //
 
 import UIKit
-import CoreData
+import RealmSwift
 
 class SaveServices: BusinessClass{
     static var sharedInstance = SaveServices()
     
-     func save(itemData: TodoItem, cetName: String){
-    //func save(itemData: TodoItem) {
-     
-     if let data = NSManagedObject(entity: NSEntityDescription.entity(forEntityName: "Item", in: BusinessClass.getContext())!, insertInto: BusinessClass.getContext()) as? Item {
+     func save(itemData: Item, cetName: Cetagory){
           
-          //let cetdata = NSManagedObject(entity: NSEntityDescription.entity(forEntityName: "CetagoryName", in: BusinessClass.getContext())!, insertInto: BusinessClass.getContext()) as? CetagoryName
-          
-          let fetchrequest = NSFetchRequest<NSFetchRequestResult>(entityName: "CetagoryName")
-         // var cetInfo = [Cetagory]()
-          fetchrequest.predicate = NSPredicate(format: "cetName == %@", cetName)
-          print("predicate is",  fetchrequest.predicate)
-     
-               let cets = try! BusinessClass.getContext().fetch(fetchrequest) as! [CetagoryName]
-          print(cets)
-          
-          for info in cets {
-          
-               if info.cetName == cetName{
-                    print(info.cetName)
-                    data.title = itemData.name
-                    data.done = itemData.chacked
-                   // cetdata?.cetName = cetName
-                    //          let rel = data.mutableSetValue(forKey: (cetdata?.cetName)!)
-                    //          rel.add(data)
-                    //data.toCetagory = info
-//                    info.setValue(NSSet(object: data), forKey: "toItems")
-//                    print(info)
-//                    info.addToToItems(data)
-//                    print(info)
-                   
-                   info.addToToItems(data)
-                   // print(data.toCetagory)
-               }
+          try! realm.write {
+              // itemData.parentCategory = cetName.items
+               //cetName.items = itemData
+              // itemData.parentCategory = cetName
+            
+               cetName.items.append(itemData)
+           realm.add(itemData)
+              
           }
-         
-         
           
-          
-          do {
-               try BusinessClass.getContext().save()
-               print("data saved....")
-          } catch let err as NSError {
-               print("Could not saved. \(err), \(err.userInfo)")
-          }
-     }
-     
         
     }
      
      func savecetToCoreData(cetData: Cetagory){
                
-               if let data = NSManagedObject(entity: NSEntityDescription.entity(forEntityName: "CetagoryName", in: BusinessClass.getContext())!, insertInto: BusinessClass.getContext()) as? CetagoryName {
-               
-                    data.cetName = cetData.cetaroryName
-               
-               do {
-                    try BusinessClass.getContext().save()
-                    print("data saved....")
-               } catch let err as NSError {
-                    print("Could not saved. \(err), \(err.userInfo)")
+          do {
+               try realm.write {
+                    realm.add(cetData)
                }
+          } catch {
+               print("error saving catagory\(error)")
           }
      }
      
-     func fetchAll(cetName: String) -> [TodoItem]{
+     func fetchAll(cetName: Cetagory) -> Results<Item> {
+           let realm = try! Realm()
           
-
-     
-          let fetchrequest = NSFetchRequest<NSFetchRequestResult>(entityName: "CetagoryName")
-         let itemPredicate = NSPredicate(format: "cetName == %@", cetName)
-          fetchrequest.predicate = itemPredicate
-          print(fetchrequest.predicate)
-         var itemInfo = [TodoItem]()
-          itemInfo.removeAll()
-          do {
-          let items = try BusinessClass.getContext().fetch(fetchrequest) as! [CetagoryName]
-               print(items)
-               for info in items {
-                    print(info)
-                    let i_info = info.toItems
-                    print(i_info)
-                    let array = i_info.allObjects as! [Item]
-                   
-                    print(array)
-                    for a in array {
-                         itemInfo.append(TodoItem(itemData: a) )
-                    }
-                  // itemInfo.append(TodoItem(itemData: i_info) )
-               }
-              
-          } catch let err as NSError{
-               
-               print(err)
- }
-        /*
-          let fetchrequest = NSFetchRequest<NSFetchRequestResult>(entityName: "Item")
-          let itemPredicate = NSPredicate(format: "\(#keyPath(Item.CetagoryName.cetName)) == %@", cetName)
-          fetchrequest.predicate = itemPredicate
-          print(fetchrequest.predicate)
-          var itemInfo = [TodoItem]()
-          itemInfo.removeAll()
-          do {
-               let items = try BusinessClass.getContext().fetch(fetchrequest) as! [Item]
-               print(items)
-               for info in items {
-                    print(info)
-//                    let i_info = info.toItems
-//                    print(i_info)
-                    
-                    itemInfo.append(TodoItem(itemData: info) )
-               }
-               
-          } catch let err as NSError{
-               
-               print(err)
-          }
+          // fetch result using filter
+          let results = realm.objects(Item.self).filter("ANY parentCategory.cetaroryName == %@", cetName.cetaroryName)
+          /*
+           
+           //// fetch result using sorted method
+        //  let result = cetName.items.sorted(byKeyPath: "title = %@", ascending: true)
+        //  print(result)
  
  */
-          print( itemInfo.count)
-          return itemInfo
+          
+          
+//          let results = realm.objects(Cetagory.self).first
+//          print(results)
+         
+          // let predicate = NSPredicate(format: "cetaroryName = %@",  cetName.cetaroryName)
+         //  print(predicate)
+//           let objects = realm.objects(Item.self).filter(predicate)
+//           print(objects)
+          
+        // let arrayOfItems = results?.items.filter(NSPredicate(format: "title = %@ AND ANY parentCategory == %@", cetName.cetaroryName))
+//          let arrayOfItems = cetName.items
+//          print(arrayOfItems)
+         // let item: Results<Item>?
+        
+          
+          //cetName.items.filter(NSPredicate(format: "results?.parentCategory == %@", cetName.cetaroryName))
+//          var items:Results<Item>?
+//
+//          print(arrayOfItems)
+//          let itemList: Results<Item>?
+//          for myItems in arrayOfItems {
+//              myItems.obje
+//          }
+          
+//          let itemsFromList2 = realm.objects(ShoppingList.self).filter("listName = 'List 2'")
+//          // Results acts like an Array
+//          let shoppingList2 = itemsFromList2.first!
+//          // itemList is what you need I think
+//          let itemList = shoppingList2.itemList
+          
+//          let cetList = realm.objects(I.self).filter("cetaroryName = 'cetName.cetaroryName'").first
+//
+//          let itemList = cetList?.items
+//
+//          for item in itemList ?? <#default value#> {
+//
+//          }
+//          let predicate = NSPredicate(format: "parentCategory.cetaroryName == %@", cetName.cetaroryName)
+//          print(predicate)
+//          let itemList = cetName.items.filter(predicate)//realm.objects(Item.self).filter(predicate)
+               //cetName.items.filter(<#T##predicate: NSPredicate##NSPredicate#>) sorted(byKeyPath: "cetName.cetaroryName")
+          //realm.objects(Person).filter(NSPredicate(format: "ANY dogs.favoriteFoods.id == %@", self.id))
+         // let arrayOfItems = realm.objects(Item.self).filter("title = %@ AND ANY parentCategory.cetaroryName = %@", cetName.cetaroryName)
+        //  print(arrayOfItems)
+          
+//          let cetagory = realm.objects(Cetagory.self).filter("cetaroryName = %@ ", cetName.cetaroryName)
+//          for canteen in canteens {
+//               for line in canteen.lines.filter("ANY meals.vegan = true") {
+//                    for meal in line.meals.filter("vegan = true") {
+//                         // do something with your vegan meal
+//                    }
+//               }
+//          }
+          
+//          let predicate = NSPredicate(format: "parentCategory = %@", cetName.cetaroryName)
+//       var   itemList = realm.objects(Item.self).filter(predicate)
+         // let realm = try! Real()
+         // let itemList: Results<Item> = { realm.objects(Item.self)} ()
+          
+          return results
+     
+         
+ }
+     
+     
+     func fetchAllCet() -> Results<Cetagory>{
+          let realm = try! Realm()
+          let cetagoryList: Results<Cetagory> = { realm.objects(Cetagory.self)} ()
+
+     return cetagoryList
      }
      
-     func fetchAllCet() -> [Cetagory]{
-          
-          let fetchrequest = NSFetchRequest<NSFetchRequestResult>(entityName: "CetagoryName")
-          var cetInfo = [Cetagory]()
-          cetInfo.removeAll()
-          do {
-               let cets = try BusinessClass.getContext().fetch(fetchrequest) as! [CetagoryName]
-              
-               for info in cets {
-                  cetInfo.append(Cetagory(cetData: info))
-               }
-               
-          } catch let err as NSError {
-               
-               print(err)
-          }
-          print( cetInfo.count)
-          return cetInfo
-     
-     }
-     
-     func UpdateitemInfo(itemInfo: TodoItem) {
-          
-          let fetchRequest = NSFetchRequest<NSManagedObject>(entityName: "Item")
-          
-          fetchRequest.predicate = NSPredicate(format: "title == %@", itemInfo.name)
-          print("predicate is",  fetchRequest.predicate)
-          
-          var updateItemMode = [TodoItem]()
+     func UpdateitemInfo(itemInfo: Item) {
           
           do {
-               if let data = try BusinessClass.getContext().fetch(fetchRequest).first as? Item
-               {
-                    data.done = itemInfo.chacked
-                    print("after edit:", data)
+               
+               try realm.write {
+                    itemInfo.done = !itemInfo.done
+                   // realm.add(itemInfo, update: true)
+                    realm.create(Item.self, value: itemInfo, update: true)
                }
                
-               do{
-                    try BusinessClass.getContext().save()
-                    print("data saved..")
-                    
-               } catch let err as NSError {
-                    print("could not save...\(err), \(err.userInfo)")
-               }
-          }catch let err as NSError {
-                    print("could not update...\(err), \(err.userInfo)")
+          } catch {
+               print("error occured during updating...\(error)")
           }
-          
      }
      
      func UpdateCetagoryName(cetInfo: Cetagory) {
           
-          let fetchRequest = NSFetchRequest<NSManagedObject>(entityName: "CetagoryName")
-          
-          fetchRequest.predicate = NSPredicate(format: "cetName == %@", cetInfo.cetaroryName)
-          print("predicate is",  fetchRequest.predicate)
-          
-          //var updateCetagoryMode = [Cetagory]()
-          
-          do {
-               if let data = try BusinessClass.getContext().fetch(fetchRequest).first as? CetagoryName
-               {
-                    data.cetName = cetInfo.cetaroryName
-                    print("after edit:", data)
-               }
-               
-               do{
-                    try BusinessClass.getContext().save()
-                    print("data saved..")
-                    
-               } catch let err as NSError {
-                    print("could not save...\(err), \(err.userInfo)")
-               }
-          }catch let err as NSError {
-               print("could not update...\(err), \(err.userInfo)")
-          }
+        
      }
      
-     func deleteItemData(itemInfo: TodoItem) {
-          
-          let fetchrequest = NSFetchRequest<NSFetchRequestResult>(entityName: "Item")
-          let predicated = NSPredicate(format: "title == %@", itemInfo.name)
-          fetchrequest.predicate = predicated
-          
-          do{
-               let datas = try BusinessClass.getContext().fetch(fetchrequest)
-               for data in datas{
-                    BusinessClass.getContext().delete(data as! NSManagedObject)
+     func deleteItemData(itemInfo: Item) {
+
+          do {
+               try realm.write {
+                    realm.delete(itemInfo)
                }
-               try BusinessClass.getContext().save()
-          } catch let err as NSError {
-               print("could not delete..\(err), \(err.userInfo)")
+               
+          } catch {
+               print("error occured during dletion..\(error)")
           }
+
      }
      
      func deleteCetagoryData(cetInfo: Cetagory) {
-          let fetchrequest = NSFetchRequest<NSFetchRequestResult>(entityName: "CetagoryName")
-          let predicated = NSPredicate(format: "cetName == %@", cetInfo.cetaroryName)
-          fetchrequest.predicate = predicated
-          
-          do{
-               let datas = try BusinessClass.getContext().fetch(fetchrequest)
-               for data in datas{
-                    BusinessClass.getContext().delete(data as! NSManagedObject)
+
+          do {
+               try realm.write {
+                    let items = realm.objects(Item.self).filter("ANY parentCategory.cetaroryName == %@", cetInfo.cetaroryName)
+                    realm.delete(items)
+                    realm.delete(cetInfo)
                }
-               try BusinessClass.getContext().save()
-          } catch let err as NSError {
-               print("could not delete..\(err), \(err.userInfo)")
+               
+          } catch {
+               print("error occured during dletion..\(error)")
           }
      }
 }
